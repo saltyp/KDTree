@@ -176,6 +176,54 @@ bool KDTree<N, ElemType>::contains(const Point<N>& pt) const {
 
 template <size_t N, typename ElemType>
 void KDTree<N, ElemType>::insert(const Point<N>& pt, const ElemType& value) {
+    // if the tree is empty, create a new node and set it as the root
+    if (root == NULL) {
+        root = new Node; //persist this node in the KDTree (past the scope of this function call)
+        numNodes += 1;
+        root->key = pt;
+        root->value = value;
+        root->level = 0;
+        root->leftc = NULL;
+        root->rightc = NULL;
+        return;
+    } else {
+        Node* current = root;
+        while (current != NULL) {
+            // if the point already exists in the tree, update the value
+            if (current->key == pt) {
+                current->value = value;
+                return;
+            }
+            size_t i = current->level;
+            if (pt[i] > current->key[i]) { // go right
+                if (current->rightc != NULL) {
+                    current = current->rightc;
+                } else { //insert here and exit
+                    current->rightc = new Node; //persist this node in the KDTree (past the scope of this function call)
+                    numNodes += 1;
+                    current->rightc->key = pt;
+                    current->rightc->value = value;
+                    current->rightc->level = (i+1)%N;
+                    current->rightc->leftc = NULL;
+                    current->rightc->rightc = NULL;
+                    return;
+                }
+            } else { // go left
+                if (current->leftc != NULL) {
+                    current = current->leftc;
+                } else { //insert here and exit
+                    current->leftc = new Node; //persist this node in the KDTree (past the scope of this function call)
+                    numNodes += 1;
+                    current->leftc->key = pt;
+                    current->leftc->value = value;
+                    current->leftc->level = (i+1)%N;
+                    current->leftc->leftc = NULL;
+                    current->leftc->rightc = NULL;
+                    return;
+                }
+            }
+        }
+    }
 }
 
 template <size_t N, typename ElemType>
