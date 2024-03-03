@@ -105,11 +105,11 @@ private:
         Point<N> key;
         ElemType value;
         size_t level; // level of the node in the KDTree : 0 for x, 1 for y, 2 for z, ...
-        Node* leftc;
+        Node* leftc; //! OBS: root & children are *pointers*, as otherwise could not check for NULL
         Node* rightc;
     };
 
-    Node* root; // root of the KDTree
+    Node* root; //root of the KDTree 
     size_t numNodes; // number of nodes in the KDTree
 
     // void deleteNode(Node* node)
@@ -162,16 +162,7 @@ bool KDTree<N, ElemType>::empty() const {
 template <size_t N, typename ElemType>
 bool KDTree<N, ElemType>::contains(const Point<N>& pt) const {
     // start at root, and traverse the tree to find the point
-    Node* current = root;
-    while (current != NULL) {
-        if (current->key == pt) return true;
-        if (pt[current->level] < current->key[current->level]) {
-            current = current->leftc;
-        } else {
-            current = current->rightc;
-        }
-    }
-    return false;
+    return (findNode(pt)!=NULL);
 }
 
 template <size_t N, typename ElemType>
@@ -225,12 +216,22 @@ ElemType& KDTree<N, ElemType>::operator[](const Point<N>& pt) {
 
 template <size_t N, typename ElemType>
 ElemType& KDTree<N, ElemType>::at(const Point<N>& pt) {
-    return root->value;
+    Node* foundNode = findNode(pt);
+    if (foundNode!=NULL) {
+        return foundNode->value;
+    } else {
+        throw out_of_range("Point was not found.");
+    }
 }
 
 template <size_t N, typename ElemType>
 const ElemType& KDTree<N, ElemType>::at(const Point<N>& pt) const {
-    return root->value;
+    Node* foundNode = findNode(pt);
+    if (foundNode!=NULL) {
+        return foundNode->value;
+    } else {
+        throw out_of_range("Point was not found.");
+    }
 }
 
 template <size_t N, typename ElemType>

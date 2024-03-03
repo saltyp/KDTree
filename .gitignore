@@ -1,1 +1,3 @@
 KDTree.pro
+*.o
+codetest
