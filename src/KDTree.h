@@ -102,33 +102,123 @@ public:
 private:
     // TODO: Add implementation details here.
     struct Node {
-        Point<N> point;
+        Point<N> key;
         ElemType value;
+        size_t level; // level of the node in the KDTree : 0 for x, 1 for y, 2 for z, ...
         Node* leftc;
         Node* rightc;
     };
 
     Node* root; // root of the KDTree
+    size_t numNodes; // number of nodes in the KDTree
+
+    // void deleteNode(Node* node)
+    // Usage: deleteNode(root);
+    // Recursively deletes the specified node and all its children in the KDTree
+    void deleteNode(Node* node);
+
+    // Node* findNode(const Point<N>& pt) const
+    // Usage: Node* foundNode = findNode(v);
+    // ----------------------------------------------------
+    // Returns a pointer to the node in the KDTree that contains the specified
+    // point. If the point is not in the tree, this function returns NULL.
+    Node* findNode(const Point<N>& pt) const;
+
 };
 
 /** KDTree class implementation details */
-
+/* Constructor : */
 template <size_t N, typename ElemType>
 KDTree<N, ElemType>::KDTree() {
     // TODO: Fill this in.
+    numNodes = 0;
+    root = NULL;
 }
 
 template <size_t N, typename ElemType>
 KDTree<N, ElemType>::~KDTree() {
     // TODO: Fill this in.
+    deleteNode(root);
+    numNodes = 0;
 }
 
 template <size_t N, typename ElemType>
 size_t KDTree<N, ElemType>::dimension() const {
     // TODO: Fill this in.
-    return 0;
+    return N;
 }
 
 // TODO: finish the implementation of the rest of the KDTree class
+template <size_t N, typename ElemType>
+size_t KDTree<N, ElemType>::size() const {
+    return numNodes;
+}
+
+template <size_t N, typename ElemType>
+bool KDTree<N, ElemType>::empty() const {
+    return numNodes == 0;
+}
+
+template <size_t N, typename ElemType>
+bool KDTree<N, ElemType>::contains(const Point<N>& pt) const {
+    // start at root, and traverse the tree to find the point
+    Node* current = root;
+    while (current != NULL) {
+        if (current->key == pt) return true;
+        if (pt[current->level] < current->key[current->level]) {
+            current = current->leftc;
+        } else {
+            current = current->rightc;
+        }
+    }
+    return false;
+}
+
+template <size_t N, typename ElemType>
+void KDTree<N, ElemType>::insert(const Point<N>& pt, const ElemType& value) {
+}
+
+template <size_t N, typename ElemType>
+ElemType& KDTree<N, ElemType>::operator[](const Point<N>& pt) {
+    return root->value;
+}
+
+template <size_t N, typename ElemType>
+ElemType& KDTree<N, ElemType>::at(const Point<N>& pt) {
+    return root->value;
+}
+
+template <size_t N, typename ElemType>
+const ElemType& KDTree<N, ElemType>::at(const Point<N>& pt) const {
+    return root->value;
+}
+
+template <size_t N, typename ElemType>
+ElemType KDTree<N, ElemType>::kNNValue(const Point<N>& key, size_t k) const {
+    return root->value;
+}
+
+template <size_t N, typename ElemType>
+void KDTree<N, ElemType>::deleteNode(Node* node) {
+        if (node == NULL) return;
+        deleteNode(node->leftc);
+        deleteNode(node->rightc);
+        delete node;
+}
+
+template <size_t N, typename ElemType>
+typename KDTree<N, ElemType>::Node* KDTree<N, ElemType>::findNode(const Point<N>& pt) const {
+    Node* p_current = root;
+    while (p_current!=NULL){
+        if (p_current->key == pt) {
+            return p_current; //Found it
+        } else {
+            size_t i = p_current->level;
+            p_current = (pt[i] > p_current->key[i]) ? p_current->rightc : p_current->leftc;
+        }
+    }
+    return p_current; // return NULL if not found
+}
+
 
 #endif // KDTREE_INCLUDED

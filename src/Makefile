@@ -1,10 +1,5 @@
 ##
 ## Makefile
-#  Should compile as : 
-# g++ -std=c++17  -g -Wall -Wextra  -c evil-hangman.cpp
-# g++ -g -Wall -Wextra    -c -o wordFamily.o wordFamily.cpp
-# g++ -g -Wall -Wextra    -c -o hangmanGame.o hangmanGame.cpp
-# g++ -std=c++17  -g -Wall -Wextra  -o playgame evil-hangman.o wordFamily.o hangmanGame.o
 ##
 
 CC = g++ -std=c++17 # compiler to use
