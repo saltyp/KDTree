@@ -15,6 +15,7 @@ CXXFLAGS = -g -Wall -Wextra #compile flags
 # ----------------------------------
 PROG = codetest #executable
 MAINAPP = test-harness.cpp
+# CLASSES = KDTree.h Point.h BoundedPQueue.h #dependencies so that make reruns if any of these change
 MAINOBJ = $(MAINAPP:.cpp=.o)
 
 # ----------------------------------
@@ -26,6 +27,9 @@ $(PROG) : $(MAINOBJ)
 $(MAINOBJ) : $(MAINAPP)
 	$(CC) $(CXXFLAGS) -c $^
 
+#dependency
+# $(MAINAPP) : $(CLASSES)
+
 # ----------------------------------
 clean :
-	rm -i *.out *.o *.h.gch
+	rm -i *.out *.o *.gch

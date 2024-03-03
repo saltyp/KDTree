@@ -211,7 +211,15 @@ void KDTree<N, ElemType>::insert(const Point<N>& pt, const ElemType& value) {
 
 template <size_t N, typename ElemType>
 ElemType& KDTree<N, ElemType>::operator[](const Point<N>& pt) {
-    return root->value;
+    Node* foundNode = findNode(pt);
+    if (foundNode!=NULL) {
+        return foundNode->value;
+    } else {
+        ElemType default_value = ElemType(); //!
+        insert(pt,default_value);
+        Node* insertedNode = findNode(pt);
+        return (insertedNode->value);
+    }
 }
 
 template <size_t N, typename ElemType>
