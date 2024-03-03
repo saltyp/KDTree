@@ -52,6 +52,7 @@ public:
 
 private:
     // The point's actual coordinates are stored in an array.
+    // (which is the same as a const pointer to the compiler, so can later be used for iterator)
     double coords[N];
 };
 

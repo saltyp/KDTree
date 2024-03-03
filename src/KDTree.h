@@ -178,13 +178,14 @@ template <size_t N, typename ElemType>
 void KDTree<N, ElemType>::insert(const Point<N>& pt, const ElemType& value) {
     // if the tree is empty, create a new node and set it as the root
     if (root == NULL) {
+        // defining the Node the long way: 
         root = new Node; //persist this node in the KDTree (past the scope of this function call)
-        numNodes += 1;
         root->key = pt;
         root->value = value;
         root->level = 0;
         root->leftc = NULL;
         root->rightc = NULL;
+        numNodes += 1;
         return;
     } else {
         Node* current = root;
@@ -199,26 +200,17 @@ void KDTree<N, ElemType>::insert(const Point<N>& pt, const ElemType& value) {
                 if (current->rightc != NULL) {
                     current = current->rightc;
                 } else { //insert here and exit
-                    current->rightc = new Node; //persist this node in the KDTree (past the scope of this function call)
+                    current->rightc = new Node {.key = pt, .value = value, .level = (i+1)%N, NULL, NULL};
                     numNodes += 1;
-                    current->rightc->key = pt;
-                    current->rightc->value = value;
-                    current->rightc->level = (i+1)%N;
-                    current->rightc->leftc = NULL;
-                    current->rightc->rightc = NULL;
                     return;
                 }
             } else { // go left
                 if (current->leftc != NULL) {
                     current = current->leftc;
-                } else { //insert here and exit
-                    current->leftc = new Node; //persist this node in the KDTree (past the scope of this function call)
+                } else { //insert  here and exit
+                    //persist this node in the KDTree (past the scope of this function call)                    
+                    current->leftc = new Node {.key = pt, .value = value, .level = (i+1)%N, NULL, NULL};
                     numNodes += 1;
-                    current->leftc->key = pt;
-                    current->leftc->value = value;
-                    current->leftc->level = (i+1)%N;
-                    current->leftc->leftc = NULL;
-                    current->leftc->rightc = NULL;
                     return;
                 }
             }
