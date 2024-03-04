@@ -121,8 +121,7 @@ private:
     // Usage: 
     // ----------------------------------------------------
     // Helper function for kNNValue to recurse on tree, filling up the bpq
-    //! OBS : requires bpq pass-by-ref as otherwise not updated properly
-    BoundedPQueue<Point<N>> recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>>& bpq, Node* p_current, size_t lvl) const;
+    BoundedPQueue<Point<N>> recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>> bpq, Node* p_current, size_t lvl) const;
 
     // Node* findNode(const Point<N>& pt) const
     // Usage: Node* foundNode = findNode(v);
@@ -272,8 +271,8 @@ ElemType KDTree<N, ElemType>::kNNValue(const Point<N>& key, size_t k) const {
 }
 
 template <size_t N, typename ElemType>
-BoundedPQueue<Point<N>> KDTree<N, ElemType>::recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>>& bpq, Node* p_current, size_t lvl) const {
-    //? should the return be bpq instead of void, and bpq be passed-by-value?
+BoundedPQueue<Point<N>> KDTree<N, ElemType>::recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>> bpq, Node* p_current, size_t lvl) const {
+    //? should the return be bpq instead of void, and bpq be passed-by-reference?
     bool go_left;
     double diff_i;    
     if (p_current == NULL) {
@@ -297,9 +296,9 @@ BoundedPQueue<Point<N>> KDTree<N, ElemType>::recKSearch(const Point<N>& pt, Boun
     bool crosses_hyperplane = (abs(diff_i) < bpq.worst());
     if (bpq_can_be_filled || crosses_hyperplane) {
         if (go_left) {
-            recKSearch(pt, bpq, p_current->rightc, lvl);
+            bpq = recKSearch(pt, bpq, p_current->rightc, lvl);
         } else {
-            recKSearch(pt, bpq, p_current->leftc, lvl); 
+            bpq = recKSearch(pt, bpq, p_current->leftc, lvl); 
         }
     }
     return bpq;        
