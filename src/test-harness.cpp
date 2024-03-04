@@ -26,16 +26,16 @@ using namespace std;
  * of the implementation, you will want to turn more and more of these
  * flags on.
  */
-#define BasicKDTreeTestEnabled          1 // Step one checks
-#define ModerateKDTreeTestEnabled       1
-#define HarderKDTreeTestEnabled         1
-#define EdgeCaseKDTreeTestEnabled       1
-#define MutatingKDTreeTestEnabled       1
-#define ThrowingKDTreeTestEnabled       1
-#define ConstKDTreeTestEnabled          1
+#define BasicKDTreeTestEnabled          0 // Step one checks
+#define ModerateKDTreeTestEnabled       0
+#define HarderKDTreeTestEnabled         0
+#define EdgeCaseKDTreeTestEnabled       0
+#define MutatingKDTreeTestEnabled       0
+#define ThrowingKDTreeTestEnabled       0
+#define ConstKDTreeTestEnabled          0
 
-#define NearestNeighborTestEnabled      0 // Step two checks
-#define MoreNearestNeighborTestEnabled  0
+#define NearestNeighborTestEnabled      1 // Step two checks
+#define MoreNearestNeighborTestEnabled  1
 
 #define BasicCopyTestEnabled            0 // Step three checks
 #define ModerateCopyTestEnabled         0

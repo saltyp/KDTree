@@ -117,6 +117,13 @@ private:
     // Recursively deletes the specified node and all its children in the KDTree
     void deleteNode(Node* node);
 
+    // void rec_ksearch(const Point<N>& key, BoundedPQueue<Point<N>>& bpq, Node* p_current) const
+    // Usage: 
+    // ----------------------------------------------------
+    // Helper function for kNNValue to recurse on tree, filling up the bpq
+    //! OBS : requires bpq pass-by-ref as otherwise not updated properly
+    BoundedPQueue<Point<N>> recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>>& bpq, Node* p_current, size_t lvl) const;
+
     // Node* findNode(const Point<N>& pt) const
     // Usage: Node* foundNode = findNode(v);
     // ----------------------------------------------------
@@ -244,7 +251,58 @@ const ElemType& KDTree<N, ElemType>::at(const Point<N>& pt) const {
 
 template <size_t N, typename ElemType>
 ElemType KDTree<N, ElemType>::kNNValue(const Point<N>& key, size_t k) const {
-    return root->value;
+    BoundedPQueue<Point<N>> bpq(k); //! BPQ is of points, not nodes for moment
+    bpq = recKSearch(key, bpq, root,0);
+
+    // returns the most common value associated with those points, with tie giving most frequent:
+    // array of pairs of (Point<N>, ElemType) to store the output of the BPQ
+    std::map<ElemType, size_t> freq_map; // value -> frequency
+    size_t orig_size = bpq.size();
+    for (size_t i = 0; i < orig_size; i++) {
+        ElemType pt_value = at(bpq.dequeueMin());
+        if (freq_map.count(pt_value)) { //0 or 1
+            freq_map[pt_value] += 1;
+        } else {
+            freq_map[pt_value] = 1;
+        }
+    }
+    ElemType most_freq = std::max_element(freq_map.begin(), freq_map.end(),
+        [](const auto& lhs, const auto& rhs) {return lhs.second < rhs.second; })->first;
+    return most_freq;
+}
+
+template <size_t N, typename ElemType>
+BoundedPQueue<Point<N>> KDTree<N, ElemType>::recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>>& bpq, Node* p_current, size_t lvl) const {
+    //? should the return be bpq instead of void, and bpq be passed-by-value?
+    bool go_left;
+    double diff_i;    
+    if (p_current == NULL) {
+        return bpq;
+    } else {
+        // recursively search side of tree the point is on for best fits:
+        double priority = Distance(pt,p_current->key);
+        bpq.enqueue(p_current->key, priority);
+        diff_i = pt[lvl] - p_current->key[lvl];
+        go_left = (diff_i < 0) ? true : false;
+        // recursively search half of the tree that wud contain test point:
+        lvl = (lvl + 1)%N; // update next pt idx to compare
+        if (go_left){
+            bpq = recKSearch(pt, bpq, p_current->leftc, lvl);
+        } else {
+            bpq = recKSearch(pt, bpq, p_current->rightc, lvl);
+        }
+    }
+    // but check that node on other side of splitting hyper-plane isn't closer:
+    bool bpq_can_be_filled = (bpq.size() < bpq.maxSize()) && (bpq.size() < numNodes);
+    bool crosses_hyperplane = (abs(diff_i) < bpq.worst());
+    if (bpq_can_be_filled || crosses_hyperplane) {
+        if (go_left) {
+            recKSearch(pt, bpq, p_current->rightc, lvl);
+        } else {
+            recKSearch(pt, bpq, p_current->leftc, lvl); 
+        }
+    }
+    return bpq;        
 }
 
 template <size_t N, typename ElemType>

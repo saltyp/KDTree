@@ -13,7 +13,7 @@ CXXFLAGS = -g -Wall -Wextra #compile flags
 # ----------------------------------
 # Files that are part of the project
 # ----------------------------------
-PROG = codetest #executable
+PROG = a.out #executable
 MAINAPP = test-harness.cpp
 # CLASSES = KDTree.h Point.h BoundedPQueue.h #dependencies so that make reruns if any of these change
 MAINOBJ = $(MAINAPP:.cpp=.o)
