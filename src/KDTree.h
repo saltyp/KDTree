@@ -129,8 +129,14 @@ private:
     // Returns a pointer to the node in the KDTree that contains the specified
     // point. If the point is not in the tree, this function returns NULL.
     Node* findNode(const Point<N>& pt) const;
-
-};
+  
+    // void _copyFromNode(const Node* current)
+    // Usage: _copyFromNode(p_node);
+    // ----------------------------------------------------
+    // Helper function to perform copies of KDTrees, used for both copy constructor and assignment operator
+    //
+    void _copyFromNode(Node* parent_node, const Node* child_to_copy, const bool is_lc);    
+ };
 
 /** KDTree class implementation details */
 /* Constructor : */
@@ -147,6 +153,34 @@ KDTree<N, ElemType>::~KDTree() {
     deleteNode(root);
     numNodes = 0;
 }
+
+template <size_t N, typename ElemType>
+KDTree<N, ElemType>::KDTree(const KDTree& rhs) {
+    if (this == &rhs) return; //self-assignment
+    root = NULL; //root of the KDTree 
+    numNodes = rhs.size();
+    if (rhs.empty()) return;
+    // copy root & then continue down the tree
+    root = new Node {.key = rhs.root->key, .value = rhs.root->value, .level = rhs.root->level, NULL, NULL};
+    _copyFromNode(root, rhs.root->leftc, true);
+    _copyFromNode(root, rhs.root->rightc, false);
+    return;
+}
+
+template <size_t N, typename ElemType>
+typename KDTree<N, ElemType>::KDTree& KDTree<N, ElemType>::operator=(const KDTree& rhs){
+    if (this == &rhs) return *this; //self-assignment
+    deleteNode(root);
+    root = NULL; //root of the KDTree
+    numNodes = rhs.size();
+    if (rhs.empty()) return *this;
+    // copy root & then continue down the tree
+    root = new Node {.key = rhs.root->key, .value = rhs.root->value, .level = rhs.root->level, NULL, NULL};
+    _copyFromNode(root, rhs.root->leftc, true);
+    _copyFromNode(root, rhs.root->rightc, false);
+    return *this;
+}
+
 
 template <size_t N, typename ElemType>
 size_t KDTree<N, ElemType>::dimension() const {
@@ -325,6 +359,27 @@ typename KDTree<N, ElemType>::Node* KDTree<N, ElemType>::findNode(const Point<N>
     }
     return p_current; // return NULL if not found
 }
+
+template <size_t N, typename ElemType>
+void KDTree<N, ElemType>::_copyFromNode(Node* parent_node, const Node* child_to_copy, const bool is_lc) {
+        if (child_to_copy == NULL) return;
+        Node* next_node;
+        if (parent_node == NULL) { // if the parent node is NULL, then the child_to_copy is the root
+            root = new Node {.key = child_to_copy->key, .value = child_to_copy->value, .level = child_to_copy->level, NULL, NULL};
+            next_node = root;
+        } else { // attach the node to the parent and continue            
+            if (is_lc) {
+                parent_node->leftc = new Node {.key = child_to_copy->key, .value = child_to_copy->value, .level = child_to_copy->level, NULL, NULL};
+                next_node = parent_node->leftc;
+            } else {
+                parent_node->rightc = new Node {.key = child_to_copy->key, .value = child_to_copy->value, .level = child_to_copy->level, NULL, NULL};
+                next_node = parent_node->rightc;
+            }
+        }
+        // and continue with the children
+        _copyFromNode(next_node, child_to_copy->leftc, true);
+        _copyFromNode(next_node, child_to_copy->rightc, false);
+    }
 
 
 #endif // KDTREE_INCLUDED

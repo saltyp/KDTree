@@ -34,10 +34,10 @@ using namespace std;
 #define ThrowingKDTreeTestEnabled       0
 #define ConstKDTreeTestEnabled          0
 
-#define NearestNeighborTestEnabled      1 // Step two checks
-#define MoreNearestNeighborTestEnabled  1
+#define NearestNeighborTestEnabled      0 // Step two checks
+#define MoreNearestNeighborTestEnabled  0
 
-#define BasicCopyTestEnabled            0 // Step three checks
+#define BasicCopyTestEnabled            1 // Step three checks
 #define ModerateCopyTestEnabled         0
 
 /* A utility function to construct a Point from a range of iterators. */
@@ -640,6 +640,8 @@ void BasicCopyTest() try {
     /* Create a clone of one and confirm that everything copied correctly. 
      * This uses the copy constructor.
      */
+
+
     KDTree<1, size_t> clone = one;
 
     /* Basic checks. */
