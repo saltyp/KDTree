@@ -121,7 +121,7 @@ private:
     // Usage: 
     // ----------------------------------------------------
     // Helper function for kNNValue to recurse on tree, filling up the bpq
-    BoundedPQueue<Point<N>> recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>> bpq, Node* p_current, size_t lvl) const;
+    void recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>>& bpq, Node* p_current, size_t lvl) const;
 
     // Node* findNode(const Point<N>& pt) const
     // Usage: Node* foundNode = findNode(v);
@@ -251,7 +251,7 @@ const ElemType& KDTree<N, ElemType>::at(const Point<N>& pt) const {
 template <size_t N, typename ElemType>
 ElemType KDTree<N, ElemType>::kNNValue(const Point<N>& key, size_t k) const {
     BoundedPQueue<Point<N>> bpq(k); //! BPQ is of points, not nodes for moment
-    bpq = recKSearch(key, bpq, root,0);
+    recKSearch(key, bpq, root,0);
 
     // returns the most common value associated with those points, with tie giving most frequent:
     // array of pairs of (Point<N>, ElemType) to store the output of the BPQ
@@ -271,12 +271,12 @@ ElemType KDTree<N, ElemType>::kNNValue(const Point<N>& key, size_t k) const {
 }
 
 template <size_t N, typename ElemType>
-BoundedPQueue<Point<N>> KDTree<N, ElemType>::recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>> bpq, Node* p_current, size_t lvl) const {
+void KDTree<N, ElemType>::recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>>& bpq, Node* p_current, size_t lvl) const {
     //? should the return be bpq instead of void, and bpq be passed-by-reference?
     bool go_left;
     double diff_i;    
     if (p_current == NULL) {
-        return bpq;
+        return;
     } else {
         // recursively search side of tree the point is on for best fits:
         double priority = Distance(pt,p_current->key);
@@ -286,9 +286,9 @@ BoundedPQueue<Point<N>> KDTree<N, ElemType>::recKSearch(const Point<N>& pt, Boun
         // recursively search half of the tree that wud contain test point:
         lvl = (lvl + 1)%N; // update next pt idx to compare
         if (go_left){
-            bpq = recKSearch(pt, bpq, p_current->leftc, lvl);
+            recKSearch(pt, bpq, p_current->leftc, lvl);
         } else {
-            bpq = recKSearch(pt, bpq, p_current->rightc, lvl);
+            recKSearch(pt, bpq, p_current->rightc, lvl);
         }
     }
     // but check that node on other side of splitting hyper-plane isn't closer:
@@ -296,12 +296,12 @@ BoundedPQueue<Point<N>> KDTree<N, ElemType>::recKSearch(const Point<N>& pt, Boun
     bool crosses_hyperplane = (abs(diff_i) < bpq.worst());
     if (bpq_can_be_filled || crosses_hyperplane) {
         if (go_left) {
-            bpq = recKSearch(pt, bpq, p_current->rightc, lvl);
+            recKSearch(pt, bpq, p_current->rightc, lvl);
         } else {
-            bpq = recKSearch(pt, bpq, p_current->leftc, lvl); 
+            recKSearch(pt, bpq, p_current->leftc, lvl); 
         }
     }
-    return bpq;        
+    return;        
 }
 
 template <size_t N, typename ElemType>
