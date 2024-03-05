@@ -134,7 +134,7 @@ private:
     // Usage: _copyFromNode(p_node);
     // ----------------------------------------------------
     // Helper function to perform copies of KDTrees, used for both copy constructor and assignment operator
-    //
+    // Copies the current child_to_copy node and its children, and attaches it to the parent node
     void _copyFromNode(Node* parent_node, const Node* child_to_copy, const bool is_lc);    
  };
 
@@ -180,7 +180,6 @@ typename KDTree<N, ElemType>::KDTree& KDTree<N, ElemType>::operator=(const KDTre
     _copyFromNode(root, rhs.root->rightc, false);
     return *this;
 }
-
 
 template <size_t N, typename ElemType>
 size_t KDTree<N, ElemType>::dimension() const {
