@@ -15,10 +15,17 @@
 #include <stdexcept>
 #include <cmath>
 
+#include <memory>
+
 // "using namespace" in a header file is conventionally frowned upon, but I'm
 // including it here so that you may use things like size_t without having to
 // type std::size_t every time.
-using namespace std;
+// using namespace std;
+using std::size_t;
+using std::cout;    using std::endl;
+using std::string;  using std::vector;  using std::set;
+using std::shared_ptr; using std::make_shared;
+using std::nullptr_t;
 
 template <size_t N, typename ElemType>
 class KDTree {
@@ -105,51 +112,55 @@ private:
         Point<N> key;
         ElemType value;
         size_t level; // level of the node in the KDTree : 0 for x, 1 for y, 2 for z, ...
-        Node* leftc; //! OBS: root & children are *pointers*, as otherwise could not check for NULL
-        Node* rightc;
+        shared_ptr<Node> leftc; //! OBS: root & children are *pointers*, as otherwise could not check for nullptr
+        shared_ptr<Node> rightc;
+
+        // Add default and parameterized constructor
+        Node() : level(0), leftc(nullptr), rightc(nullptr) {};
+
+        Node(Point<N> key, ElemType value, size_t level, nullptr_t leftc, nullptr_t rightc)
+        : key(key), value(value), level(level), leftc(leftc), rightc(rightc) {};
     };
 
-    Node* root; //root of the KDTree 
+    shared_ptr<Node> root; //root of the KDTree 
     size_t numNodes; // number of nodes in the KDTree
 
     // void deleteNode(Node* node)
     // Usage: deleteNode(root);
     // Recursively deletes the specified node and all its children in the KDTree
-    void deleteNode(Node* node);
+    void deleteNode(shared_ptr<Node> node);
 
     // void rec_ksearch(const Point<N>& key, BoundedPQueue<Point<N>>& bpq, Node* p_current) const
     // Usage: 
     // ----------------------------------------------------
     // Helper function for kNNValue to recurse on tree, filling up the bpq
-    void recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>>& bpq, Node* p_current, size_t lvl) const;
+    void recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>>& bpq, std::shared_ptr<Node> p_current, size_t lvl) const;
 
     // Node* findNode(const Point<N>& pt) const
     // Usage: Node* foundNode = findNode(v);
     // ----------------------------------------------------
     // Returns a pointer to the node in the KDTree that contains the specified
-    // point. If the point is not in the tree, this function returns NULL.
-    Node* findNode(const Point<N>& pt) const;
+    // point. If the point is not in the tree, this function returns nullptr.
+    shared_ptr<Node> findNode(const Point<N>& pt) const;
   
     // void _copyFromNode(const Node* current)
     // Usage: _copyFromNode(p_node);
     // ----------------------------------------------------
     // Helper function to perform copies of KDTrees, used for both copy constructor and assignment operator
     // Copies the current child_to_copy node and its children, and attaches it to the parent node
-    void _copyFromNode(Node* parent_node, const Node* child_to_copy, const bool is_lc);    
+    void _copyFromNode(shared_ptr<Node> parent_node, const shared_ptr<Node> child_to_copy, const bool is_lc);    
  };
 
 /** KDTree class implementation details */
 /* Constructor : */
 template <size_t N, typename ElemType>
 KDTree<N, ElemType>::KDTree() {
-    // TODO: Fill this in.
     numNodes = 0;
-    root = NULL;
+    root = nullptr;
 }
 
 template <size_t N, typename ElemType>
 KDTree<N, ElemType>::~KDTree() {
-    // TODO: Fill this in.
     deleteNode(root);
     numNodes = 0;
 }
@@ -157,11 +168,12 @@ KDTree<N, ElemType>::~KDTree() {
 template <size_t N, typename ElemType>
 KDTree<N, ElemType>::KDTree(const KDTree& rhs) {
     if (this == &rhs) return; //self-assignment
-    root = NULL; //root of the KDTree 
+    root = nullptr; //root of the KDTree 
     numNodes = rhs.size();
     if (rhs.empty()) return;
     // copy root & then continue down the tree
-    root = new Node {.key = rhs.root->key, .value = rhs.root->value, .level = rhs.root->level, NULL, NULL};
+    // root = unique_ptr<Node>(new Node {.key = rhs.root->key, .value = rhs.root->value, .level = rhs.root->level, nullptr, nullptr});
+    root = make_shared<Node>(rhs.root->key, rhs.root->value,rhs.root->level, nullptr, nullptr);
     _copyFromNode(root, rhs.root->leftc, true);
     _copyFromNode(root, rhs.root->rightc, false);
     return;
@@ -171,11 +183,12 @@ template <size_t N, typename ElemType>
 typename KDTree<N, ElemType>::KDTree& KDTree<N, ElemType>::operator=(const KDTree& rhs){
     if (this == &rhs) return *this; //self-assignment
     deleteNode(root);
-    root = NULL; //root of the KDTree
+    root = nullptr; //root of the KDTree
     numNodes = rhs.size();
     if (rhs.empty()) return *this;
     // copy root & then continue down the tree
-    root = new Node {.key = rhs.root->key, .value = rhs.root->value, .level = rhs.root->level, NULL, NULL};
+    // root = new Node {.key = rhs.root->key, .value = rhs.root->value, .level = rhs.root->level, nullptr, nullptr};
+    root = make_shared<Node>(rhs.root->key, rhs.root->value, rhs.root->level, nullptr, nullptr);
     _copyFromNode(root, rhs.root->leftc, true);
     _copyFromNode(root, rhs.root->rightc, false);
     return *this;
@@ -183,11 +196,9 @@ typename KDTree<N, ElemType>::KDTree& KDTree<N, ElemType>::operator=(const KDTre
 
 template <size_t N, typename ElemType>
 size_t KDTree<N, ElemType>::dimension() const {
-    // TODO: Fill this in.
     return N;
 }
 
-// TODO: finish the implementation of the rest of the KDTree class
 template <size_t N, typename ElemType>
 size_t KDTree<N, ElemType>::size() const {
     return numNodes;
@@ -201,25 +212,25 @@ bool KDTree<N, ElemType>::empty() const {
 template <size_t N, typename ElemType>
 bool KDTree<N, ElemType>::contains(const Point<N>& pt) const {
     // start at root, and traverse the tree to find the point
-    return (findNode(pt)!=NULL);
+    return (findNode(pt)!=nullptr);
 }
 
 template <size_t N, typename ElemType>
 void KDTree<N, ElemType>::insert(const Point<N>& pt, const ElemType& value) {
     // if the tree is empty, create a new node and set it as the root
-    if (root == NULL) {
+    if (root == nullptr) {
         // defining the Node the long way: 
-        root = new Node; //persist this node in the KDTree (past the scope of this function call)
+        root = shared_ptr<Node>(new Node); //persist this node in the KDTree (past the scope of this function call)
         root->key = pt;
         root->value = value;
         root->level = 0;
-        root->leftc = NULL;
-        root->rightc = NULL;
+        root->leftc = nullptr;
+        root->rightc = nullptr;
         numNodes += 1;
         return;
     } else {
-        Node* current = root;
-        while (current != NULL) {
+        std::shared_ptr<Node> current = root;
+        while (current != nullptr) {
             // if the point already exists in the tree, update the value
             if (current->key == pt) {
                 current->value = value;
@@ -227,19 +238,19 @@ void KDTree<N, ElemType>::insert(const Point<N>& pt, const ElemType& value) {
             }
             size_t i = current->level;
             if (pt[i] > current->key[i]) { // go right
-                if (current->rightc != NULL) {
+                if (current->rightc != nullptr) {
                     current = current->rightc;
                 } else { //insert here and exit
-                    current->rightc = new Node {.key = pt, .value = value, .level = (i+1)%N, NULL, NULL};
+                    current->rightc = make_shared<Node>(pt, value, (i+1)%N, nullptr, nullptr);
                     numNodes += 1;
                     return;
                 }
             } else { // go left
-                if (current->leftc != NULL) {
+                if (current->leftc != nullptr) {
                     current = current->leftc;
                 } else { //insert  here and exit
                     //persist this node in the KDTree (past the scope of this function call)                    
-                    current->leftc = new Node {.key = pt, .value = value, .level = (i+1)%N, NULL, NULL};
+                    current->leftc = make_shared<Node>(pt, value, (i+1)%N, nullptr, nullptr);
                     numNodes += 1;
                     return;
                 }
@@ -250,21 +261,21 @@ void KDTree<N, ElemType>::insert(const Point<N>& pt, const ElemType& value) {
 
 template <size_t N, typename ElemType>
 ElemType& KDTree<N, ElemType>::operator[](const Point<N>& pt) {
-    Node* foundNode = findNode(pt);
-    if (foundNode!=NULL) {
+    shared_ptr<Node> foundNode = findNode(pt);
+    if (foundNode!=nullptr) {
         return foundNode->value;
     } else {
         ElemType default_value = ElemType(); //!
         insert(pt,default_value);
-        Node* insertedNode = findNode(pt);
+        shared_ptr<Node> insertedNode = findNode(pt);
         return (insertedNode->value);
     }
 }
 
 template <size_t N, typename ElemType>
 ElemType& KDTree<N, ElemType>::at(const Point<N>& pt) {
-    Node* foundNode = findNode(pt);
-    if (foundNode!=NULL) {
+    shared_ptr<Node> foundNode = findNode(pt);
+    if (foundNode!=nullptr) {
         return foundNode->value;
     } else {
         throw out_of_range("Point was not found.");
@@ -273,8 +284,8 @@ ElemType& KDTree<N, ElemType>::at(const Point<N>& pt) {
 
 template <size_t N, typename ElemType>
 const ElemType& KDTree<N, ElemType>::at(const Point<N>& pt) const {
-    Node* foundNode = findNode(pt);
-    if (foundNode!=NULL) {
+    shared_ptr<Node> foundNode = findNode(pt);
+    if (foundNode!=nullptr) {
         return foundNode->value;
     } else {
         throw out_of_range("Point was not found.");
@@ -304,11 +315,11 @@ ElemType KDTree<N, ElemType>::kNNValue(const Point<N>& key, size_t k) const {
 }
 
 template <size_t N, typename ElemType>
-void KDTree<N, ElemType>::recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>>& bpq, Node* p_current, size_t lvl) const {
+void KDTree<N, ElemType>::recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>>& bpq, shared_ptr<Node> p_current, size_t lvl) const {
     //? should the return be bpq instead of void, and bpq be passed-by-reference?
     bool go_left;
     double diff_i;    
-    if (p_current == NULL) {
+    if (p_current == nullptr) {
         return;
     } else {
         // recursively search side of tree the point is on for best fits:
@@ -338,17 +349,18 @@ void KDTree<N, ElemType>::recKSearch(const Point<N>& pt, BoundedPQueue<Point<N>>
 }
 
 template <size_t N, typename ElemType>
-void KDTree<N, ElemType>::deleteNode(Node* node) {
-        if (node == NULL) return;
+void KDTree<N, ElemType>::deleteNode(shared_ptr<Node> node) {
+        if (node == nullptr) return;
         deleteNode(node->leftc);
         deleteNode(node->rightc);
-        delete node;
+        // delete node;
+        node.reset(); //TODO : shouldn't be necessary
 }
 
 template <size_t N, typename ElemType>
-typename KDTree<N, ElemType>::Node* KDTree<N, ElemType>::findNode(const Point<N>& pt) const {
-    Node* p_current = root;
-    while (p_current!=NULL){
+shared_ptr<typename KDTree<N, ElemType>::Node> KDTree<N, ElemType>::findNode(const Point<N>& pt) const {
+    shared_ptr<Node> p_current = root;
+    while (p_current!=nullptr){
         if (p_current->key == pt) {
             return p_current; //Found it
         } else {
@@ -356,22 +368,23 @@ typename KDTree<N, ElemType>::Node* KDTree<N, ElemType>::findNode(const Point<N>
             p_current = (pt[i] > p_current->key[i]) ? p_current->rightc : p_current->leftc;
         }
     }
-    return p_current; // return NULL if not found
+    return p_current; // return nullptr if not found
 }
 
 template <size_t N, typename ElemType>
-void KDTree<N, ElemType>::_copyFromNode(Node* parent_node, const Node* child_to_copy, const bool is_lc) {
-        if (child_to_copy == NULL) return;
-        Node* next_node;
-        if (parent_node == NULL) { // if the parent node is NULL, then the child_to_copy is the root
-            root = new Node {.key = child_to_copy->key, .value = child_to_copy->value, .level = child_to_copy->level, NULL, NULL};
+void KDTree<N, ElemType>::_copyFromNode(shared_ptr<Node> parent_node, const shared_ptr<Node> child_to_copy, const bool is_lc) {
+        if (child_to_copy == nullptr) return;
+        shared_ptr<Node> next_node;
+        if (parent_node == nullptr) { // if the parent node is nullptr, then the child_to_copy is the root
+            root = make_shared<Node>(child_to_copy->key, child_to_copy->value, child_to_copy->level, nullptr, nullptr);
             next_node = root;
         } else { // attach the node to the parent and continue            
             if (is_lc) {
-                parent_node->leftc = new Node {.key = child_to_copy->key, .value = child_to_copy->value, .level = child_to_copy->level, NULL, NULL};
+                // parent_node->leftc = new Node {.key = child_to_copy->key, .value = child_to_copy->value, .level = child_to_copy->level, nullptr, nullptr};
+                parent_node->leftc = make_shared<Node>(child_to_copy->key, child_to_copy->value, child_to_copy->level, nullptr, nullptr);                
                 next_node = parent_node->leftc;
             } else {
-                parent_node->rightc = new Node {.key = child_to_copy->key, .value = child_to_copy->value, .level = child_to_copy->level, NULL, NULL};
+                parent_node->rightc = make_shared<Node>(child_to_copy->key, child_to_copy->value, child_to_copy->level, nullptr, nullptr);
                 next_node = parent_node->rightc;
             }
         }
